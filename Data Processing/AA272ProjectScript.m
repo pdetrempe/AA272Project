@@ -42,21 +42,21 @@ if isempty(allGpsEph), return, end
 gpsPvt = GpsWlsPvt(gnssMeas,allGpsEph);
 
 %% plot Pvt results
-h4 = figure;
-ts = 'Raw Pseudoranges, Weighted Least Squares solution';
-PlotPvt(gpsPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
-h5 = figure;
-PlotPvtStates(gpsPvt,prFileName);
+% h4 = figure;
+% ts = 'Raw Pseudoranges, Weighted Least Squares solution';
+% PlotPvt(gpsPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
+% h5 = figure;
+% PlotPvtStates(gpsPvt,prFileName);
 
 %% Plot Accumulated Delta Range 
-if any(any(isfinite(gnssMeas.AdrM) & gnssMeas.AdrM~=0))
-    [gnssMeas]= ProcessAdr(gnssMeas);
-    h6 = figure;
-    PlotAdr(gnssMeas,prFileName,colors);
-    [adrResid]= GpsAdrResiduals(gnssMeas,allGpsEph,param.llaTrueDegDegM);drawnow
-    h7 = figure;
-    PlotAdrResids(adrResid,gnssMeas,prFileName,colors);
-end
+% if any(any(isfinite(gnssMeas.AdrM) & gnssMeas.AdrM~=0))
+%     [gnssMeas]= ProcessAdr(gnssMeas);
+%     h6 = figure;
+%     PlotAdr(gnssMeas,prFileName,colors);
+%     [adrResid]= GpsAdrResiduals(gnssMeas,allGpsEph,param.llaTrueDegDegM);drawnow
+%     h7 = figure;
+%     PlotAdrResids(adrResid,gnssMeas,prFileName,colors);
+% end
 %% end of ProcessGnssMeasScript
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Copyright 2016 Google Inc.
