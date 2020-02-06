@@ -9,7 +9,7 @@ param.llaTrueDegDegM = [];
 %% data
 % save data from GnssLogger App, and edit dirName and prFileName appropriately
 dirName = [pwd,'/../Log Files'];
-prFileName = 'gnss_log_pixel3xl.txt';
+prFileName = 'Rooftop_2.6.20.txt';
 addpath(genpath(pwd));
 
 %% parameters
