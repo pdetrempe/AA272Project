@@ -4,6 +4,7 @@
 % Modified Winter 2020 Zack Miller
 %Open Source code for processing Android GNSS Measurements
 
+clear; close all; clc;
 param.llaTrueDegDegM = [];
 
 %% data
@@ -15,7 +16,7 @@ addpath(genpath(pwd));
 %% parameters
 %param.llaTrueDegDegM = [];
 %enter true WGS84 lla, if you know it:
-param.llaTrueDegDegM = [37.42709, -122.17329, 32];%Durand Roof
+param.llaTrueDegDegM = [37+25/60+36.85322/3600, -(122+10/60+23.79153/3600), 32];%Durand Roof
 
 %% Set the data filter and Read log file
 dataFilter = SetDataFilter;
@@ -40,14 +41,15 @@ if isempty(allGpsEph), return, end
 % PlotCno(gnssMeas,prFileName,colors);
 
 %% compute WLS position and velocity
+tic()
 gpsPvt = GpsWlsPvt(gnssMeas,allGpsEph);
-
+toc()
 %% plot Pvt results
-% h4 = figure;
-% ts = 'Raw Pseudoranges, Weighted Least Squares solution';
-% PlotPvt(gpsPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
-% h5 = figure;
-% PlotPvtStates(gpsPvt,prFileName);
+h4 = figure;
+ts = 'Raw Pseudoranges, Weighted Least Squares solution';
+PlotPvt(gpsPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
+h5 = figure;
+PlotPvtStates(gpsPvt,prFileName);
 
 %% Plot Accumulated Delta Range 
 % if any(any(isfinite(gnssMeas.AdrM) & gnssMeas.AdrM~=0))
