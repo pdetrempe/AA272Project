@@ -1,4 +1,4 @@
-function [xHat,z,svPos,H,Wpr,Wrr] = HuberPvt(prs,gpsEph,xo)
+function [xHat,z,svPos,H] = HuberPvt(prs,gpsEph,xo)
 % [xHat,z,svPos,H,Wpr,Wrr] = WlsPvt(prs,gpsEph,xo)
 % calculate a Huber norm PVT solution, xHat
 % given pseudoranges, pr rates, and initial state
@@ -60,8 +60,10 @@ ttx = ttxSeconds - dtsv; %subtract dtsv from sv time to get true gps time
 svXyzTrx = svXyzTtx; %initialize svXyz at time of reception
 
 % %Compute weights ---------------------------------------------------
-% Wpr = diag(1./prs(:,jPrSig));
-% Wrr = diag(1./prs(:,jPrrSig));
+Wpr = diag(1./prs(:,jPrSig));
+Wrr = diag(1./prs(:,jPrrSig));
+
+Wpr_root = sqrt(Wpr);   % square root/Cholesky factor of weighting matrix
 
 %iterate on this next part tilL change in pos & line of sight vectors converge
 xHat=zeros(4,1);
@@ -105,8 +107,8 @@ while norm(dx) > GnssThresholds.MAXDELPOSFORNAVM
   % Replace with Huber norm
   cvx_begin quiet
         variable dx(4)
-        M = 1;
-        f = huber_circ(zPr-H*dx,M);
+        M = 2;
+        f = huber_circ(Wpr_root*(zPr-H*dx),M);
         minimize(f);
   cvx_end
 
@@ -120,18 +122,20 @@ while norm(dx) > GnssThresholds.MAXDELPOSFORNAVM
 end
 
 % Compute velocities ---------------------------------------------------------
-rrMps = zeros(numVal,1);
-for i=1:numVal
-    %range rate = [satellite velocity] dot product [los from xo to sv]
-    rrMps(i) = -svXyzDot(i,:)*v(:,i);
-end
-prrHat = rrMps + xo(8) - GpsConstants.LIGHTSPEED*dtsvDot;
-zPrr = prs(:,jPrr)-prrHat;
-%z = Hx, premultiply by W: Wz = WHx, and solve for x:
-vHat = pinv(Wrr*H)*Wrr*zPrr;
-xHat = [xHat;vHat]; 
+% rrMps = zeros(numVal,1);
+% for i=1:numVal
+%     %range rate = [satellite velocity] dot product [los from xo to sv]
+%     rrMps(i) = -svXyzDot(i,:)*v(:,i);
+% end
+% prrHat = rrMps + xo(8) - GpsConstants.LIGHTSPEED*dtsvDot;
+% zPrr = prs(:,jPrr)-prrHat;
+% %z = Hx, premultiply by W: Wz = WHx, and solve for x:
+% vHat = pinv(Wrr*H)*Wrr*zPrr;
 
-z = [zPr;zPrr];
+
+xHat = [xHat]; 
+
+z = [zPr];
 
 end %end of function WlsPvt
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -150,7 +154,7 @@ elseif length(gpsEph)~=numVal
     return
 elseif any(prs(:,jSv) ~= [gpsEph.PRN]')
     return
-elseif  any(size(xo) ~= [8,1])
+elseif  any(size(xo) ~= [4,1])
     return
 elseif size(prs,2)~=7
     return

@@ -80,29 +80,29 @@ ylabel(hNewAxes,'(microseconds)');  %# Add label to right
 linkaxes([hNewAxes, h1234(2)],'x'); 
 
 %plot three components of speed ------------------------------------------------
-h1234(3)=subplot(4,1,3);
-vel = gnssPvt.allVelMps;
-plot(tSeconds,vel(:,1),'r');hold on
-plot(tSeconds,vel(:,2),'g');
-plot(tSeconds,vel(:,3),'b');
-title('Velocity states [North,East,Down]');
-grid on, ylabel('(m/s)'),
-
-%label North, East, Down
-iFi = isfinite(vel(:,1));%index into finite results
-h=zeros(1,3); %handles for Lat, Lon, Alt
-h(1)=text(tSeconds(end),vel(iFi(end),1),'North');
-set(h(1),'Color','r')
-h(2)=text(tSeconds(end),vel(iFi(end),2),'East');
-set(h(2),'Color','g')
-h(3)=text(tSeconds(end),vel(iFi(end),3),'Down');
-set(h(3),'Color','b')
-%shift the highest a little higher, so it doesnt overwrite the others
-[~,iMax] = max(vel(iFi(end),:));
-set(h(iMax),'VerticalAlignment','bottom');
-%shift the lowest a little lower
-[~,iMin] = min(vel(iFi(end),:));
-set(h(iMin),'VerticalAlignment','top');
+% h1234(3)=subplot(4,1,3);
+% vel = gnssPvt.allVelMps;
+% plot(tSeconds,vel(:,1),'r');hold on
+% plot(tSeconds,vel(:,2),'g');
+% plot(tSeconds,vel(:,3),'b');
+% title('Velocity states [North,East,Down]');
+% grid on, ylabel('(m/s)'),
+% 
+% %label North, East, Down
+% iFi = isfinite(vel(:,1));%index into finite results
+% h=zeros(1,3); %handles for Lat, Lon, Alt
+% h(1)=text(tSeconds(end),vel(iFi(end),1),'North');
+% set(h(1),'Color','r')
+% h(2)=text(tSeconds(end),vel(iFi(end),2),'East');
+% set(h(2),'Color','g')
+% h(3)=text(tSeconds(end),vel(iFi(end),3),'Down');
+% set(h(3),'Color','b')
+% %shift the highest a little higher, so it doesnt overwrite the others
+% [~,iMax] = max(vel(iFi(end),:));
+% set(h(iMax),'VerticalAlignment','bottom');
+% %shift the lowest a little lower
+% [~,iMin] = min(vel(iFi(end),:));
+% set(h(iMin),'VerticalAlignment','top');
 
 %plot common frequency offset -------------------------------------------------
 h1234(4)=subplot(4,1,4);

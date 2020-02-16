@@ -32,7 +32,7 @@ if isempty(allGpsEph), return, end
 %% process raw measurements, compute pseudoranges:
 [gnssMeas] = ProcessGnssMeas(gnssRaw);
 
-% %% plot pseudoranges and pseudorange rates
+%% plot pseudoranges and pseudorange rates
 % h1 = figure;
 % [colors] = PlotPseudoranges(gnssMeas,prFileName);
 % h2 = figure;
@@ -41,15 +41,28 @@ if isempty(allGpsEph), return, end
 % PlotCno(gnssMeas,prFileName,colors);
 
 %% compute WLS position and velocity
+% tic()
+% gpsWLSPvt = GpsWlsPvt(gnssMeas,allGpsEph);
+% toc()
+% %% plot Pvt results
+% h4 = figure;
+% ts = 'Raw Pseudoranges, Weighted Least Squares solution';
+% PlotPvt(gpsWLSPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
+% h5 = figure;
+% PlotPvtStates(gpsWLSPvt,prFileName);
+
+%% compute Huber position and velocity
 tic()
-gpsPvt = GpsWlsPvt(gnssMeas,allGpsEph);
+gpsHuberPvt = GpsHuberPvt(gnssMeas,allGpsEph);
 toc()
+
 %% plot Pvt results
-h4 = figure;
-ts = 'Raw Pseudoranges, Weighted Least Squares solution';
-PlotPvt(gpsPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
-h5 = figure;
-PlotPvtStates(gpsPvt,prFileName);
+h6 = figure;
+ts = 'Raw Pseudoranges, Huber solution';
+PlotPvt(gpsHuberPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
+h7 = figure;
+PlotPvtStates(gpsHuberPvt,prFileName);
+
 
 %% Plot Accumulated Delta Range 
 % if any(any(isfinite(gnssMeas.AdrM) & gnssMeas.AdrM~=0))
