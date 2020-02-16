@@ -71,10 +71,11 @@ dx=xHat+inf;
 whileCount=0; maxWhileCount=100; 
 %we expect the while loop to converge in < 10 iterations, even with initial
 %position on other side of the Earth (see Stanford course AA272C "Intro to GPS")
-while norm(dx) > GnssThresholds.MAXDELPOSFORNAVM
+threshold = 1;
+while norm(dx) > threshold && whileCount < maxWhileCount
     whileCount=whileCount+1;
-    assert(whileCount < maxWhileCount,...
-        'while loop did not converge after %d iterations',whileCount);
+%     assert(whileCount < maxWhileCount,...
+%         'while loop did not converge after %d iterations',whileCount);
     for i=1:length(gpsEph)
         % calculate tflight from, bc and dtsv
         dtflight = (prs(i,jPr)-bc)/GpsConstants.LIGHTSPEED + dtsv(i);
@@ -105,12 +106,15 @@ while norm(dx) > GnssThresholds.MAXDELPOSFORNAVM
 %   dx = pinv(Wpr*H)*Wpr*zPr;
 
   % Replace with Huber norm
+  % Try regularizing
+  scale = 1e-3;
   cvx_begin quiet
         variable dx(4)
-        M = 2;
-        f = huber_circ(Wpr_root*(zPr-H*dx),M);
+        M = 1;
+        f = huber_circ(scale.*Wpr_root*(zPr-H*dx),M);
         minimize(f);
   cvx_end
+  dx = dx;%./scale;
 
   % update xo, xhat and bc
   xHat=xHat+dx;

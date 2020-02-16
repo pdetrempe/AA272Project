@@ -4,7 +4,7 @@
 % Modified Winter 2020 Zack Miller
 %Open Source code for processing Android GNSS Measurements
 
-clear; close all; clc;
+clear; clc;
 param.llaTrueDegDegM = [];
 
 %% data
@@ -41,28 +41,39 @@ if isempty(allGpsEph), return, end
 % PlotCno(gnssMeas,prFileName,colors);
 
 %% compute WLS position and velocity
-tic()
-gpsWLSPvt = GpsWlsPvt(gnssMeas,allGpsEph);
-toc()
-%% plot Pvt results
-h4 = figure;
-ts = 'Weighted Least Squares solution';
-PlotPvt(gpsWLSPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
-ax = gca;
-xlim([-35,35])
-ylim([-35,35])
-% h5 = figure;
-% PlotPvtStates(gpsWLSPvt,prFileName);
+% tic()
+% gpsWLSPvt = GpsWlsPvt(gnssMeas,allGpsEph);
+% toc()
+% %% plot Pvt results
+% h4 = figure;
+% ts = 'Weighted Least Squares solution';
+% PlotPvt(gpsWLSPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
+% ax = gca;
+% xlim([-35,35])
+% ylim([-35,35])
 
 %% compute Huber position and velocity
+% tic()
+% gpsHuberPvt = GpsHuberPvt(gnssMeas,allGpsEph);
+% toc()
+% 
+% %% plot Pvt results
+% h6 = figure;
+% ts = 'Raw Pseudoranges, Huber solution';
+% PlotPvt(gpsHuberPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
+% ax = gca;
+% xlim([-35,35])
+% ylim([-35,35])
+
+%% Compute Welsh position
 tic()
-gpsHuberPvt = GpsHuberPvt(gnssMeas,allGpsEph);
+gpsWelshPvt = GpsWelshPvt(gnssMeas,allGpsEph);
 toc()
 
 %% plot Pvt results
 h6 = figure;
-ts = 'Raw Pseudoranges, Huber solution';
-PlotPvt(gpsHuberPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
+ts = 'Raw Pseudoranges, Welsh solution';
+PlotPvt(gpsWelshPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
 ax = gca;
 xlim([-35,35])
 ylim([-35,35])
