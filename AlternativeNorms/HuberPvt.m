@@ -71,7 +71,7 @@ dx=xHat+inf;
 whileCount=0; maxWhileCount=100; 
 %we expect the while loop to converge in < 10 iterations, even with initial
 %position on other side of the Earth (see Stanford course AA272C "Intro to GPS")
-threshold = 1;
+threshold = 5;
 while norm(dx) > threshold && whileCount < maxWhileCount
     whileCount=whileCount+1;
 %     assert(whileCount < maxWhileCount,...
@@ -107,7 +107,7 @@ while norm(dx) > threshold && whileCount < maxWhileCount
 
   % Replace with Huber norm
   % Try regularizing
-  scale = 1e-5;
+  scale = 1e-3;
   cvx_begin quiet
         variable dx(4)
         M = 1;
