@@ -107,7 +107,7 @@ while norm(dx) > threshold && whileCount < maxWhileCount
 
   % Replace with Huber norm
   % Try regularizing
-  scale = 1e-3;
+  scale = 1e-5;
   cvx_begin quiet
         variable dx(4)
         M = 1;

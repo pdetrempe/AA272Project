@@ -9,7 +9,7 @@ param.llaTrueDegDegM = [];
 
 %% data
 % save data from GnssLogger App, and edit dirName and prFileName appropriately
-dirName = [pwd,'/../Log Files'];
+dirName = [pwd,'\Log Files'];
 prFileName = 'Rooftop_2.6.20.txt';
 addpath(genpath(pwd));
 
@@ -41,29 +41,29 @@ if isempty(allGpsEph), return, end
 % PlotCno(gnssMeas,prFileName,colors);
 
 %% compute WLS position and velocity
-% tic()
-% gpsWLSPvt = GpsWlsPvt(gnssMeas,allGpsEph);
-% toc()
-% %% plot Pvt results
-% h4 = figure;
-% ts = 'Weighted Least Squares solution';
-% PlotPvt(gpsWLSPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
-% ax = gca;
-% xlim([-35,35])
-% ylim([-35,35])
+tic()
+gpsWLSPvt = GpsWlsPvt(gnssMeas,allGpsEph);
+toc()
+%% plot Pvt results
+h4 = figure;
+ts = 'Weighted Least Squares solution';
+PlotPvt(gpsWLSPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
+ax = gca;
+xlim([-35,35])
+ylim([-35,35])
 
 %% compute Huber position and velocity
-% tic()
-% gpsHuberPvt = GpsHuberPvt(gnssMeas,allGpsEph);
-% toc()
-% 
-% %% plot Pvt results
-% h6 = figure;
-% ts = 'Raw Pseudoranges, Huber solution';
-% PlotPvt(gpsHuberPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
-% ax = gca;
-% xlim([-35,35])
-% ylim([-35,35])
+tic()
+gpsHuberPvt = GpsHuberPvt(gnssMeas,allGpsEph);
+toc()
+
+%% plot Pvt results
+h6 = figure;
+ts = 'Raw Pseudoranges, Huber solution';
+PlotPvt(gpsHuberPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
+ax = gca;
+xlim([-35,35])
+ylim([-35,35])
 
 %% Compute Welsh position
 tic()
