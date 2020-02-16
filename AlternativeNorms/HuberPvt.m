@@ -60,7 +60,7 @@ ttx = ttxSeconds - dtsv; %subtract dtsv from sv time to get true gps time
 svXyzTrx = svXyzTtx; %initialize svXyz at time of reception
 
 % %Compute weights ---------------------------------------------------
-Wpr = diag(1./prs(:,jPrSig));
+Wpr = diag(1./prs(:,jPrSig));       % Just weighted by the pseudoranges
 Wrr = diag(1./prs(:,jPrrSig));
 
 Wpr_root = sqrt(Wpr);   % square root/Cholesky factor of weighting matrix

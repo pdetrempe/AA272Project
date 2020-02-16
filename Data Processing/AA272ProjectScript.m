@@ -41,13 +41,16 @@ if isempty(allGpsEph), return, end
 % PlotCno(gnssMeas,prFileName,colors);
 
 %% compute WLS position and velocity
-% tic()
-% gpsWLSPvt = GpsWlsPvt(gnssMeas,allGpsEph);
-% toc()
-% %% plot Pvt results
-% h4 = figure;
-% ts = 'Raw Pseudoranges, Weighted Least Squares solution';
-% PlotPvt(gpsWLSPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
+tic()
+gpsWLSPvt = GpsWlsPvt(gnssMeas,allGpsEph);
+toc()
+%% plot Pvt results
+h4 = figure;
+ts = 'Weighted Least Squares solution';
+PlotPvt(gpsWLSPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
+ax = gca;
+xlim([-35,35])
+ylim([-35,35])
 % h5 = figure;
 % PlotPvtStates(gpsWLSPvt,prFileName);
 
@@ -60,9 +63,9 @@ toc()
 h6 = figure;
 ts = 'Raw Pseudoranges, Huber solution';
 PlotPvt(gpsHuberPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
-h7 = figure;
-PlotPvtStates(gpsHuberPvt,prFileName);
-
+ax = gca;
+xlim([-35,35])
+ylim([-35,35])
 
 %% Plot Accumulated Delta Range 
 % if any(any(isfinite(gnssMeas.AdrM) & gnssMeas.AdrM~=0))

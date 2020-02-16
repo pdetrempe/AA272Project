@@ -42,7 +42,7 @@ end
 %% plot ne errors vs llaTrueDegDegM --------------------------------------------
 nedM = Lla2Ned(gpsPvt.allLlaDegDegM,llaRef);%keep the NaNs in for the plot
 %so we see a break in the lines where there was no position
-h123=subplot(4,1,1:2);
+% h123=subplot(4,1,1:2);
 h1 = plot(nedM(:,2),nedM(:,1));
 set(h1,'LineStyle','-','LineWidth',0.1,'Color',ltgray)
 hold on, plot(nedM(:,2),nedM(:,1),'cx'); 
@@ -82,33 +82,34 @@ hr=rectangle('Position',[-1 -1 2 2]*medM,'Curvature',[1 1]);
 set(hr,'EdgeColor',gray)
 ts = sprintf('50%% distribution = %.1f m',medM);
 text(0,medM,ts,'VerticalAlignment','bottom','Color',gray)
+
 %% end of plot ne errors vs llaTrueDegDegM -------------------------------------
 
 %time variable for plots
 tSeconds = gpsPvt.FctSeconds-gpsPvt.FctSeconds(1);
 
 %% plot speed
-h123(2)=subplot(4,1,3);
-N = length(gpsPvt.FctSeconds);
-iGood = isfinite(gpsPvt.allVelMps(:,1));
-speedMps = zeros(1,N)+NaN;
-speedMps(iGood) = sqrt(sum(gpsPvt.allVelMps(iGood,1:2)'.^2)); %horizontal speed
-plot(tSeconds,speedMps);grid on
-ylabel('Horiz. speed (m/s)')
+% h123(2)=subplot(4,1,3);
+% N = length(gpsPvt.FctSeconds);
+% iGood = isfinite(gpsPvt.allVelMps(:,1));
+% speedMps = zeros(1,N)+NaN;
+% speedMps(iGood) = sqrt(sum(gpsPvt.allVelMps(iGood,1:2)'.^2)); %horizontal speed
+% plot(tSeconds,speedMps);grid on
+% ylabel('Horiz. speed (m/s)')
 
 %% plot hdop & # sats
-h123(3)=subplot(4,1,4);
-[hyy,h1]=plotyy(tSeconds,gpsPvt.hdop,tSeconds,gpsPvt.numSvs,'plot','stairs');
-grid on
-set(h1,'LineWidth',1)
-ylabel(hyy(1),'HDOP'); ylabel(hyy(2),'# sats'); 
-xs = sprintf('time(seconds)\n%s',prFileName);
-xlabel(xs,'Interpreter','none')
-
-set(hyy,'Box','off')
-
-linkaxes(h123(2:3),'x');
-linkaxes(hyy,'x')
+% h123(3)=subplot(4,1,4);
+% [hyy,h1]=plotyy(tSeconds,gpsPvt.hdop,tSeconds,gpsPvt.numSvs,'plot','stairs');
+% grid on
+% set(h1,'LineWidth',1)
+% ylabel(hyy(1),'HDOP'); ylabel(hyy(2),'# sats'); 
+% xs = sprintf('time(seconds)\n%s',prFileName);
+% xlabel(xs,'Interpreter','none')
+% 
+% set(hyy,'Box','off')
+% 
+% linkaxes(h123(2:3),'x');
+% linkaxes(hyy,'x')
 
 
 end %end of function PlotPvt
