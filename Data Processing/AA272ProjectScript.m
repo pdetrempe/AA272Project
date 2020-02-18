@@ -49,8 +49,6 @@ h4 = figure;
 ts = 'Weighted Least Squares solution';
 PlotPvt(gpsWLSPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
 ax = gca;
-xlim([-35,35])
-ylim([-35,35])
 
 %% compute Huber position and velocity
 tic()
@@ -62,8 +60,6 @@ h6 = figure;
 ts = 'Raw Pseudoranges, Huber solution';
 PlotPvt(gpsHuberPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
 ax = gca;
-xlim([-35,35])
-ylim([-35,35])
 
 %% Compute Welsh position
 tic()
@@ -75,8 +71,6 @@ h6 = figure;
 ts = 'Raw Pseudoranges, Welsh solution';
 PlotPvt(gpsWelshPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
 ax = gca;
-xlim([-35,35])
-ylim([-35,35])
 
 %% Plot Accumulated Delta Range 
 % if any(any(isfinite(gnssMeas.AdrM) & gnssMeas.AdrM~=0))
