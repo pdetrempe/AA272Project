@@ -4,12 +4,12 @@
 % Modified Winter 2020 Zack Miller
 %Open Source code for processing Android GNSS Measurements
 
-clear; clc;
+clear; clc; close all;
 param.llaTrueDegDegM = [];
 
 %% data
 % save data from GnssLogger App, and edit dirName and prFileName appropriately
-dirName = [pwd,'\Log Files'];
+dirName = [pwd,'/../Log Files'];
 prFileName = 'Rooftop_2.6.20.txt';
 addpath(genpath(pwd));
 
