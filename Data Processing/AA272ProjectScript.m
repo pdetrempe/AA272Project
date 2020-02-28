@@ -4,7 +4,7 @@
 % Modified Winter 2020 Zack Miller
 %Open Source code for processing Android GNSS Measurements
 
-clear; close all; clc;
+clear; clc; close all;
 param.llaTrueDegDegM = [];
 
 %% data
@@ -32,7 +32,7 @@ if isempty(allGpsEph), return, end
 %% process raw measurements, compute pseudoranges:
 [gnssMeas] = ProcessGnssMeas(gnssRaw);
 
-% %% plot pseudoranges and pseudorange rates
+%% plot pseudoranges and pseudorange rates
 % h1 = figure;
 % [colors] = PlotPseudoranges(gnssMeas,prFileName);
 % h2 = figure;
@@ -42,14 +42,35 @@ if isempty(allGpsEph), return, end
 
 %% compute WLS position and velocity
 tic()
-gpsPvt = GpsWlsPvt(gnssMeas,allGpsEph);
+gpsWLSPvt = GpsWlsPvt(gnssMeas,allGpsEph);
 toc()
 %% plot Pvt results
 h4 = figure;
-ts = 'Raw Pseudoranges, Weighted Least Squares solution';
-PlotPvt(gpsPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
-h5 = figure;
-PlotPvtStates(gpsPvt,prFileName);
+ts = 'Weighted Least Squares solution';
+PlotPvt(gpsWLSPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
+ax = gca;
+
+%% compute Huber position and velocity
+tic()
+gpsHuberPvt = GpsHuberPvt(gnssMeas,allGpsEph);
+toc()
+
+%% plot Pvt results
+h6 = figure;
+ts = 'Raw Pseudoranges, Huber solution';
+PlotPvt(gpsHuberPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
+ax = gca;
+
+%% Compute Welsh position
+tic()
+gpsWelshPvt = GpsWelshPvt(gnssMeas,allGpsEph);
+toc()
+
+%% plot Pvt results
+h6 = figure;
+ts = 'Raw Pseudoranges, Welsh solution';
+PlotPvt(gpsWelshPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
+ax = gca;
 
 %% Plot Accumulated Delta Range 
 % if any(any(isfinite(gnssMeas.AdrM) & gnssMeas.AdrM~=0))

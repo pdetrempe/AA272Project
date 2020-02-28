@@ -1,6 +1,6 @@
-function [xHat,z,svPos,H,Wpr,Wrr] = WlsPvt(prs,gpsEph,xo)
+function [xHat,z,svPos,H] = HuberPvt(prs,gpsEph,xo)
 % [xHat,z,svPos,H,Wpr,Wrr] = WlsPvt(prs,gpsEph,xo)
-% calculate a weighted least squares PVT solution, xHat
+% calculate a Huber norm PVT solution, xHat
 % given pseudoranges, pr rates, and initial state
 %
 % Inputs: 
@@ -59,9 +59,11 @@ ttx = ttxSeconds - dtsv; %subtract dtsv from sv time to get true gps time
 [svXyzTtx,dtsv,svXyzDot,dtsvDot]=GpsEph2Pvt(gpsEph,[ttxWeek,ttx]);
 svXyzTrx = svXyzTtx; %initialize svXyz at time of reception
 
-%Compute weights ---------------------------------------------------
-Wpr = diag(1./prs(:,jPrSig));
+% %Compute weights ---------------------------------------------------
+Wpr = diag(1./prs(:,jPrSig));       % Just weighted by the pseudoranges
 Wrr = diag(1./prs(:,jPrrSig));
+
+Wpr_root = sqrt(Wpr);   % square root/Cholesky factor of weighting matrix
 
 %iterate on this next part tilL change in pos & line of sight vectors converge
 xHat=zeros(4,1);
@@ -69,7 +71,7 @@ dx=xHat+inf;
 whileCount=0; maxWhileCount=100; 
 %we expect the while loop to converge in < 10 iterations, even with initial
 %position on other side of the Earth (see Stanford course AA272C "Intro to GPS")
-threshold = .5;
+threshold = 5;
 while norm(dx) > threshold && whileCount < maxWhileCount
     whileCount=whileCount+1;
 %     assert(whileCount < maxWhileCount,...
@@ -99,8 +101,20 @@ while norm(dx) > threshold && whileCount < maxWhileCount
   zPr = prs(:,jPr)-prHat; 
   H = [v', ones(numVal,1)]; % H matrix = [unit vector,1]
   
-  %z = Hx, premultiply by W: Wz = WHx, and solve for x:
-  dx = pinv(Wpr*H)*Wpr*zPr;
+  % The actual least squares line
+%   %z = Hx, premultiply by W: Wz = WHx, and solve for x:
+%   dx = pinv(Wpr*H)*Wpr*zPr;
+
+  % Replace with Huber norm
+  % Try regularizing
+  scale = 1e-3;
+  cvx_begin quiet
+        variable dx(4)
+        M = 2;
+        f = huber_circ(scale.*Wpr_root*(zPr-H*dx),M);
+        minimize(f);
+  cvx_end
+  dx = dx;%./scale;
 
   % update xo, xhat and bc
   xHat=xHat+dx;
@@ -112,18 +126,20 @@ while norm(dx) > threshold && whileCount < maxWhileCount
 end
 
 % Compute velocities ---------------------------------------------------------
-rrMps = zeros(numVal,1);
-for i=1:numVal
-    %range rate = [satellite velocity] dot product [los from xo to sv]
-    rrMps(i) = -svXyzDot(i,:)*v(:,i);
-end
-prrHat = rrMps + xo(8) - GpsConstants.LIGHTSPEED*dtsvDot;
-zPrr = prs(:,jPrr)-prrHat;
-%z = Hx, premultiply by W: Wz = WHx, and solve for x:
-vHat = pinv(Wrr*H)*Wrr*zPrr;
-xHat = [xHat;vHat]; 
+% rrMps = zeros(numVal,1);
+% for i=1:numVal
+%     %range rate = [satellite velocity] dot product [los from xo to sv]
+%     rrMps(i) = -svXyzDot(i,:)*v(:,i);
+% end
+% prrHat = rrMps + xo(8) - GpsConstants.LIGHTSPEED*dtsvDot;
+% zPrr = prs(:,jPrr)-prrHat;
+% %z = Hx, premultiply by W: Wz = WHx, and solve for x:
+% vHat = pinv(Wrr*H)*Wrr*zPrr;
 
-z = [zPr;zPrr];
+
+xHat = [xHat]; 
+
+z = [zPr];
 
 end %end of function WlsPvt
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -142,7 +158,7 @@ elseif length(gpsEph)~=numVal
     return
 elseif any(prs(:,jSv) ~= [gpsEph.PRN]')
     return
-elseif  any(size(xo) ~= [8,1])
+elseif  any(size(xo) ~= [4,1])
     return
 elseif size(prs,2)~=7
     return

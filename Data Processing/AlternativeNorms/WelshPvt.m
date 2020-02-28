@@ -1,6 +1,6 @@
-function [xHat,z,svPos,H,Wpr,Wrr] = WlsPvt(prs,gpsEph,xo)
+function [xHat,z,svPos,H] = WelshPvt(prs,gpsEph,xo)
 % [xHat,z,svPos,H,Wpr,Wrr] = WlsPvt(prs,gpsEph,xo)
-% calculate a weighted least squares PVT solution, xHat
+% calculate a Huber norm PVT solution, xHat
 % given pseudoranges, pr rates, and initial state
 %
 % Inputs: 
@@ -59,9 +59,13 @@ ttx = ttxSeconds - dtsv; %subtract dtsv from sv time to get true gps time
 [svXyzTtx,dtsv,svXyzDot,dtsvDot]=GpsEph2Pvt(gpsEph,[ttxWeek,ttx]);
 svXyzTrx = svXyzTtx; %initialize svXyz at time of reception
 
-%Compute weights ---------------------------------------------------
-Wpr = diag(1./prs(:,jPrSig));
+% %Compute weights ---------------------------------------------------
+Wpr = diag(1./prs(:,jPrSig));       % Just weighted by the pseudoranges
 Wrr = diag(1./prs(:,jPrrSig));
+
+% Try regularizing
+scale = 1;
+Wpr_root = sqrt(Wpr)./scale;   % square root/Cholesky factor of weighting matrix
 
 %iterate on this next part tilL change in pos & line of sight vectors converge
 xHat=zeros(4,1);
@@ -99,10 +103,26 @@ while norm(dx) > threshold && whileCount < maxWhileCount
   zPr = prs(:,jPr)-prHat; 
   H = [v', ones(numVal,1)]; % H matrix = [unit vector,1]
   
-  %z = Hx, premultiply by W: Wz = WHx, and solve for x:
-  dx = pinv(Wpr*H)*Wpr*zPr;
+  % The actual least squares line
+%   %z = Hx, premultiply by W: Wz = WHx, and solve for x:
+%   dx = pinv(Wpr*H)*Wpr*zPr;
 
+
+  % Replace with Welsh function
+  % optimization options
+  options = optimset('TolX',1e-14,'TolFun', 1e-14,'Display','off');
+  % warm start with naive LS
+%   if whileCount==1
+    dx0 = H\zPr;
+%   end
+  % Shape parameter
+%   k = 95700;
+    k = 20000;
+  dx = fminunc(@(dx)WelshRhoCirc(Wpr_root*(zPr-H*dx), k),dx0,options);
+
+  
   % update xo, xhat and bc
+  dx0 = dx;
   xHat=xHat+dx;
   xyz0=xyz0(:)+dx(1:3);
   bc=bc+dx(4);
@@ -112,22 +132,34 @@ while norm(dx) > threshold && whileCount < maxWhileCount
 end
 
 % Compute velocities ---------------------------------------------------------
-rrMps = zeros(numVal,1);
-for i=1:numVal
-    %range rate = [satellite velocity] dot product [los from xo to sv]
-    rrMps(i) = -svXyzDot(i,:)*v(:,i);
-end
-prrHat = rrMps + xo(8) - GpsConstants.LIGHTSPEED*dtsvDot;
-zPrr = prs(:,jPrr)-prrHat;
-%z = Hx, premultiply by W: Wz = WHx, and solve for x:
-vHat = pinv(Wrr*H)*Wrr*zPrr;
-xHat = [xHat;vHat]; 
+% rrMps = zeros(numVal,1);
+% for i=1:numVal
+%     %range rate = [satellite velocity] dot product [los from xo to sv]
+%     rrMps(i) = -svXyzDot(i,:)*v(:,i);
+% end
+% prrHat = rrMps + xo(8) - GpsConstants.LIGHTSPEED*dtsvDot;
+% zPrr = prs(:,jPrr)-prrHat;
+% %z = Hx, premultiply by W: Wz = WHx, and solve for x:
+% vHat = pinv(Wrr*H)*Wrr*zPrr;
 
-z = [zPr;zPrr];
+
+xHat = [xHat]; 
+
+z = [zPr];
 
 end %end of function WlsPvt
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function rho = WelshRho(x, k)
+%Welsh function (simplified GGW function)
+scale = 1e5;
+rho = scale*(1-exp( (-(x/k).^2)/2 ) );
+    
+end
+
+function rho_norm = WelshRhoCirc(x, k)
+    rho_norm = norm(WelshRho(x, k));
+end
 
 function [bOk,numVal] = checkInputs(prs, gpsEph, xo)
 %utility function for WlsPvt
@@ -142,7 +174,7 @@ elseif length(gpsEph)~=numVal
     return
 elseif any(prs(:,jSv) ~= [gpsEph.PRN]')
     return
-elseif  any(size(xo) ~= [8,1])
+elseif  any(size(xo) ~= [4,1])
     return
 elseif size(prs,2)~=7
     return
