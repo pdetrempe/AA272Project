@@ -4,12 +4,12 @@
 % Modified Winter 2020 Zack Miller
 %Open Source code for processing Android GNSS Measurements
 
-clear; clc;
+clear; clc; close all;
 param.llaTrueDegDegM = [];
 
 %% data
 % save data from GnssLogger App, and edit dirName and prFileName appropriately
-dirName = [pwd,'\Log Files'];
+dirName = [pwd,'/../Log Files'];
 prFileName = 'Rooftop_2.6.20.txt';
 addpath(genpath(pwd));
 
@@ -49,8 +49,6 @@ h4 = figure;
 ts = 'Weighted Least Squares solution';
 PlotPvt(gpsWLSPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
 ax = gca;
-xlim([-35,35])
-ylim([-35,35])
 
 %% compute Huber position and velocity
 tic()
@@ -62,8 +60,6 @@ h6 = figure;
 ts = 'Raw Pseudoranges, Huber solution';
 PlotPvt(gpsHuberPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
 ax = gca;
-xlim([-35,35])
-ylim([-35,35])
 
 %% Compute Welsh position
 tic()
@@ -75,8 +71,6 @@ h6 = figure;
 ts = 'Raw Pseudoranges, Welsh solution';
 PlotPvt(gpsWelshPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
 ax = gca;
-xlim([-35,35])
-ylim([-35,35])
 
 %% Plot Accumulated Delta Range 
 % if any(any(isfinite(gnssMeas.AdrM) & gnssMeas.AdrM~=0))

@@ -110,7 +110,7 @@ while norm(dx) > threshold && whileCount < maxWhileCount
   scale = 1e-3;
   cvx_begin quiet
         variable dx(4)
-        M = 1;
+        M = 2;
         f = huber_circ(scale.*Wpr_root*(zPr-H*dx),M);
         minimize(f);
   cvx_end
