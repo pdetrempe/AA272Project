@@ -10,13 +10,13 @@ param.llaTrueDegDegM = [];
 %% data
 % save data from GnssLogger App, and edit dirName and prFileName appropriately
 dirName = [pwd,filesep,'..',filesep,'Log Files'];
-prFileName = 'Rooftop_2.6.20.txt';
+prFileName = 'Rooftop.txt'; %Rooftop, Walking, Huang
 addpath(genpath(pwd));
 
 %% parameters
 %param.llaTrueDegDegM = [];
 %enter true WGS84 lla, if you know it:
-param.llaTrueDegDegM = [37+25/60+36.85322/3600, -(122+10/60+23.79153/3600), 32];%Durand Roof
+% param.llaTrueDegDegM = [37+25/60+36.85322/3600, -(122+10/60+23.79153/3600), 32];%Durand Roof
 
 %% Set the data filter and Read log file
 dataFilter = SetDataFilter;
