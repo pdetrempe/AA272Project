@@ -69,7 +69,7 @@ for i=1:N
         continue;%skip to next epoch
     end
     
-    %% PVT -----------------------------------------------------------------
+    %% EKF PVT -----------------------------------------------------------------
     %for those svIds with valid ephemeris, pack prs matrix for WlsNav
     prM     = gnssMeas.PrM(i,iValid(iSv))';
     prSigmaM= gnssMeas.PrSigmaM(i,iValid(iSv))';
