@@ -11,12 +11,13 @@ param.llaTrueDegDegM = [];
 % save data from GnssLogger App, and edit dirName and prFileName appropriately
 dirName = [pwd,filesep,'..',filesep,'Log Files'];
 prFileName = 'Rooftop.txt'; %Rooftop, Walking, Huang
-addpath(genpath(pwd));
+oldpath = addpath(genpath(pwd));
 
 %% parameters
 %param.llaTrueDegDegM = [];
 %enter true WGS84 lla, if you know it:
-% param.llaTrueDegDegM = [37+25/60+36.85322/3600, -(122+10/60+23.79153/3600), 32];%Durand Roof
+param.llaTrueDegDegM = [37+25/60+36.85322/3600, -(122+10/60+23.79153/3600), 32];%Durand Roof
+% param.llaTrueDegDegM = [37.427988, -122.174070, 32];%Huang
 
 %% Set the data filter and Read log file
 dataFilter = SetDataFilter;
@@ -45,9 +46,19 @@ tic()
 gpsWLSPvt = GpsWlsPvt(gnssMeas,allGpsEph);
 toc()
 %% plot Pvt results
-h4 = figure;
+figure;
 ts = 'Weighted Least Squares solution';
 PlotPvt(gpsWLSPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
+ax = gca;
+
+%% compute EKF position and velocity
+tic()
+gpsEKFPvt = GpsEKFPvt(gnssMeas,allGpsEph);
+toc()
+%% plot Pvt results
+figure;
+ts = 'EKF solution';
+PlotPvt(gpsEKFPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
 ax = gca;
 
 %% compute Huber position and velocity
@@ -56,7 +67,7 @@ gpsHuberPvt = GpsHuberPvt(gnssMeas,allGpsEph);
 toc()
 
 %% plot Pvt results
-h6 = figure;
+figure;
 ts = 'Raw Pseudoranges, Huber solution';
 PlotPvt(gpsHuberPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
 ax = gca;
@@ -67,7 +78,7 @@ gpsWelshPvt = GpsWelshPvt(gnssMeas,allGpsEph);
 toc()
 
 %% plot Pvt results
-h6 = figure;
+figure;
 ts = 'Raw Pseudoranges, Welsh solution';
 PlotPvt(gpsWelshPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
 ax = gca;
@@ -75,10 +86,10 @@ ax = gca;
 % Plot Accumulated Delta Range 
 if any(any(isfinite(gnssMeas.AdrM) & gnssMeas.AdrM~=0))
     [gnssMeas]= ProcessAdr(gnssMeas);
-    h6 = figure;
+    figure;
     PlotAdr(gnssMeas,prFileName,colors);
     [adrResid]= GpsAdrResiduals(gnssMeas,allGpsEph,param.llaTrueDegDegM);drawnow
-    h7 = figure;
+    figure;
     PlotAdrResids(adrResid,gnssMeas,prFileName,colors);
 end
 %% end of ProcessGnssMeasScript
@@ -96,3 +107,5 @@ end
 % WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 % See the License for the specific language governing permissions and
 % limitations under the License.
+
+path(oldpath)

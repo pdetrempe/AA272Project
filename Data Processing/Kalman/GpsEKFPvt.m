@@ -32,9 +32,9 @@ else
     end
 end
 
-xo =zeros(8,1);%initial state: [center of the Earth, bc=0, velocities = 0]'
+x0 =zeros(4,1);%initial state: [center of the Earth, bc=0, velocities = 0]'
 
-weekNum     = floor(gnssMeas.FctSeconds/GpsConstants.WEEKSEC);
+weekNum = floor(gnssMeas.FctSeconds/GpsConstants.WEEKSEC);
 %TBD check for week rollover here (it is checked in ProcessGnssMeas, but
 %this function should stand alone, so we should check again, and adjust 
 %tRxSeconds by +- a week if necessary)
@@ -81,45 +81,20 @@ for i=1:N
     
     prs = [tRx, svid, prM, prSigmaM, prrMps, prrSigmaMps];
     
-    xo(5:7) = zeros(3,1); %initialize speed to zero
-    
     % NEW CODE
     if i==1
-        [xHat,~,~,H,Wpr,Wrr] = WlsPvt(prs,gpsEph,xo);%compute WLS solution for timestep 1
+        [x0,~,~,H,Wpr,~] = WlsPvt(prs,gpsEph,zeros(8,1));%compute WLS solution for timestep 1
+        P = inv(H'*(Wpr'*Wpr)*H); 
     else
-        [xHat,~,~,H,Wpr,Wrr] = EKFPvt(prs,gpsEph,xo);%compute EKF solution
+        [x0,~,P] = EKFPvt(prs,gpsEph,x0(1:4),P);%compute EKF solution
     end
-    xo = xo + xHat;
+    % END OF NEW CODE
     
     %extract position states
-    llaDegDegM = Xyz2Lla(xo(1:3)');
+    llaDegDegM = Xyz2Lla(x0(1:3)');
     gpsPvt.allLlaDegDegM(i,:) = llaDegDegM;
-    gpsPvt.allBcMeters(i) = xo(4);
+    gpsPvt.allBcMeters(i) = x0(4);
     
-    %extract velocity states
-    RE2N = RotEcef2Ned(llaDegDegM(1),llaDegDegM(2));
-    %NOTE: in real-time code compute RE2N once until position changes
-    vNed = RE2N*xo(5:7); %velocity in NED
-    gpsPvt.allVelMps(i,:) = vNed;
-    gpsPvt.allBcDotMps(i) = xo(8);
-    
-    %compute HDOP
-    H = [H(:,1:3)*RE2N', ones(numSvs,1)]; %observation matrix in NED
-    P = inv(H'*H);%unweighted covariance
-    gpsPvt.hdop(i) = sqrt(P(1,1)+P(2,2));
-    
-    %compute variance of llaDegDegM
-    %inside LsPvt the weights are used like this:
-    %  z = Hx, premultiply by W: Wz = WHx, and solve for x:
-    %  x = pinv(Wpr*H)*Wpr*zPr;
-    %  the point of the weights is to make sigma(Wz) = 1
-    %  therefore, the variances of x come from  diag(inv(H'Wpr'WprH))
-    P = inv(H'*(Wpr'*Wpr)*H); %weighted covariance
-    gpsPvt.sigmaLLaM(i,:) = sqrt(diag(P(1:3,1:3)));
-    
-    %similarly, compute variance of velocity
-    P = inv(H'*(Wrr'*Wrr)*H); %weighted covariance
-    gpsPvt.sigmaVelMps(i,:) = sqrt(diag(P(1:3,1:3)));
     %%end WLS PVT --------------------------------------------------------------
 end
 

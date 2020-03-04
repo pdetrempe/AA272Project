@@ -1,5 +1,5 @@
-function [xHat,z,svPos,H,Wpr,Wrr] = WlsPvt(prs,gpsEph,xo)
-% [xHat,z,svPos,H,Wpr,Wrr] = WlsPvt(prs,gpsEph,xo)
+function [x0,H,P] = EKFPvt(prs,gpsEph,x0,P)
+% [xHat,z,svPos,H,Wpr,Wrr] = WlsPvt(prs,gpsEph,x0)
 % calculate a weighted least squares PVT solution, xHat
 % given pseudoranges, pr rates, and initial state
 %
@@ -12,7 +12,7 @@ function [xHat,z,svPos,H,Wpr,Wrr] = WlsPvt(prs,gpsEph,xo)
 %   prMeters, prSigmaMeters: pseudorange and standard deviation (meters)
 %   prrMps, prrSigmaMps: pseudorange rate and standard deviation (m/s)
 %   gpsEph: matching vector of GPS ephemeris struct, defined in ReadRinexNav
-%   xo: initial (previous) state, [x,y,z,bc,xDot,yDot,xDot,bcDot]'
+%   x0: initial (previous) state, [x,y,z,bc,xDot,yDot,xDot,bcDot]'
 %       in ECEF coordinates(meters and m/s)
 %
 % Outputs: xHat: estimate of state update
@@ -23,7 +23,7 @@ function [xHat,z,svPos,H,Wpr,Wrr] = WlsPvt(prs,gpsEph,xo)
 %          Wpr,Wrr Weights used in WlsPvt = 1/diag(sigma measurements)
 %                  use these matrices to compute variances of xHat
 %
-% The PVT solution = xo + xHat, in ECEF coordinates
+% The PVT solution = x0 + xHat, in ECEF coordinates
 % For unweighted solution, set all sigmas = 1
 
 %Author: Frank van Diggelen
@@ -33,14 +33,14 @@ function [xHat,z,svPos,H,Wpr,Wrr] = WlsPvt(prs,gpsEph,xo)
 
 jWk=1; jSec=2; jSv=3; jPr=4; jPrSig=5; jPrr=6; jPrrSig=7;%index of columns
 
-[bOk,numVal] = checkInputs(prs, gpsEph, xo);
+[bOk,numVal] = checkInputs(prs, gpsEph, x0);
 if ~bOk
     error('inputs not right size, or not properly aligned with each other')
 end
 
 xHat=[]; z=[]; H=[]; svPos=[];
-xyz0 = xo(1:3);
-bc = xo(4);
+xyz0 = x0(1:3);
+bc = x0(4);
 
 if numVal<4
     return
@@ -61,13 +61,6 @@ ttx = ttxSeconds - dtsv; %subtract dtsv from sv time to get true gps time
 [svXyzTtx,dtsv,svXyzDot,dtsvDot]=GpsEph2Pvt(gpsEph,[ttxWeek,ttx]);
 svXyzTrx = svXyzTtx; %initialize svXyz at time of reception
 
-%EKF Calculations ---------------------------------------------------
-Wpr = diag(1./prs(:,jPrSig));
-Wrr = diag(1./prs(:,jPrrSig));
-
-xHat=zeros(4,1);
-dx=xHat+inf;
-
 for i=1:length(gpsEph)
     % calculate tflight from, bc and dtsv
     dtflight = (prs(i,jPr)-bc)/GpsConstants.LIGHTSPEED + dtsv(i);
@@ -78,105 +71,41 @@ for i=1:length(gpsEph)
     svXyzTrx(i,:) = FlightTimeCorrection(svXyzTtx(i,:), dtflight);
 end
 
-%calculate line of sight vectors and ranges from satellite to xo
+%EKF Calculations ---------------------------------------------------
+% Noise Parameters --------------------------------------------------
+
+Q = 1 * eye(4);
+R = 1e-5 * eye(numVal);
+
+% Jacobians ---------------------------------------------------------
+
+F = eye(4);
+
 v = xyz0(:)*ones(1,numVal,1) - svXyzTrx';%v(:,i) = vector from sv(i) to xyz0
 range = sqrt( sum(v.^2) );
-v = v./(ones(3,1)*range); % line of sight unit vectors from sv to xo
+v = v./(ones(3,1)*range); % line of sight unit vectors from sv to x0
+H = [v', ones(numVal,1)];
 
-svPos=[prs(:,3),svXyzTrx,dtsv(:)];
+% Predict -----------------------------------------------------------
 
-%calculate the a-priori range residual
-prHat = range(:) + bc -GpsConstants.LIGHTSPEED*dtsv;
-% Use of bc: bc>0 <=> pr too big <=> rangehat too big
-% Use of dtsv: dtsv>0 <=> pr too small
+x0(1:4) = x0(1:4);
+P = F*P*F' + Q;
 
-zPr = prs(:,jPr)-prHat;
-H = [v', ones(numVal,1)]; % H matrix = [unit vector,1]
+% Update ------------------------------------------------------------
 
-%z = Hx, premultiply by W: Wz = WHx, and solve for x:
-dx = pinv(Wpr*H)*Wpr*zPr;
+% zPr = prs(:,jPr) - range' - x0(4);   %innovation
+prHat = range(:) + bc - GpsConstants.LIGHTSPEED*dtsv;
+zPr = prs(:,jPr)-prHat; 
+K = P*H' * inv(R + H*P*H');
 
-% update xo, xhat and bc
-xHat=xHat+dx;
-xyz0=xyz0(:)+dx(1:3);
-bc=bc+dx(4);
+x0 = x0 + K * zPr;
+P = (eye(size(P)) - K*H) * P * (eye(size(P)) - K*H)' + K*R*K';
 
-%Now calculate the a-posteriori range residual
-zPr = zPr-H*dx;
-
-
-
-% %Compute weights ---------------------------------------------------
-% Wpr = diag(1./prs(:,jPrSig));
-% Wrr = diag(1./prs(:,jPrrSig));
-%
-% %iterate on this next part till change in pos & line of sight vectors converge
-% xHat=zeros(4,1);
-% dx=xHat+inf;
-% whileCount=0; maxWhileCount=100;
-% %we expect the while loop to converge in < 10 iterations, even with initial
-% %position on other side of the Earth (see Stanford course AA272C "Intro to GPS")
-% threshold = .5;
-% while norm(dx) > threshold && whileCount < maxWhileCount
-%     whileCount=whileCount+1;
-% %     assert(whileCount < maxWhileCount,...
-% %         'while loop did not converge after %d iterations',whileCount);
-%     for i=1:length(gpsEph)
-%         % calculate tflight from, bc and dtsv
-%         dtflight = (prs(i,jPr)-bc)/GpsConstants.LIGHTSPEED + dtsv(i);
-%         % Use of bc: bc>0 <=> pr too big <=> tflight too big.
-%         %   i.e. trx = trxu - bc/GpsConstants.LIGHTSPEED
-%         % Use of dtsv: dtsv>0 <=> pr too small <=> tflight too small.
-%         %   i.e ttx = ttxsv - dtsv
-%         svXyzTrx(i,:) = FlightTimeCorrection(svXyzTtx(i,:), dtflight);
-%     end
-%
-%   %calculate line of sight vectors and ranges from satellite to xo
-%   v = xyz0(:)*ones(1,numVal,1) - svXyzTrx';%v(:,i) = vector from sv(i) to xyz0
-%   range = sqrt( sum(v.^2) );
-%   v = v./(ones(3,1)*range); % line of sight unit vectors from sv to xo
-%
-%   svPos=[prs(:,3),svXyzTrx,dtsv(:)];
-%
-%   %calculate the a-priori range residual
-%   prHat = range(:) + bc -GpsConstants.LIGHTSPEED*dtsv;
-%   % Use of bc: bc>0 <=> pr too big <=> rangehat too big
-%   % Use of dtsv: dtsv>0 <=> pr too small
-%
-%   zPr = prs(:,jPr)-prHat;
-%   H = [v', ones(numVal,1)]; % H matrix = [unit vector,1]
-%
-%   %z = Hx, premultiply by W: Wz = WHx, and solve for x:
-%   dx = pinv(Wpr*H)*Wpr*zPr;
-%
-%   % update xo, xhat and bc
-%   xHat=xHat+dx;
-%   xyz0=xyz0(:)+dx(1:3);
-%   bc=bc+dx(4);
-%
-%   %Now calculate the a-posteriori range residual
-%   zPr = zPr-H*dx;
-% end
-
-% Compute velocities ---------------------------------------------------------
-rrMps = zeros(numVal,1);
-for i=1:numVal
-    %range rate = [satellite velocity] dot product [los from xo to sv]
-    rrMps(i) = -svXyzDot(i,:)*v(:,i);
-end
-prrHat = rrMps + xo(8) - GpsConstants.LIGHTSPEED*dtsvDot;
-zPrr = prs(:,jPrr)-prrHat;
-%z = Hx, premultiply by W: Wz = WHx, and solve for x:
-vHat = pinv(Wrr*H)*Wrr*zPrr;
-xHat = [xHat;vHat];
-
-z = [zPr;zPrr];
-
-end %end of function WlsPvt
+end %end of function EKFPvt
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-function [bOk,numVal] = checkInputs(prs, gpsEph, xo)
+function [bOk,numVal] = checkInputs(prs, gpsEph, x0)
 %utility function for WlsPvt
 jWk=1; jSec=2; jSv=3; jPr=4; jPrSig=5; jPrr=6; jPrrSig=7;%index of columns
 
@@ -189,7 +118,7 @@ elseif length(gpsEph)~=numVal
     return
 elseif any(prs(:,jSv) ~= [gpsEph.PRN]')
     return
-elseif  any(size(xo) ~= [8,1])
+elseif  any(size(x0) ~= [4,1])
     return
 elseif size(prs,2)~=7
     return
