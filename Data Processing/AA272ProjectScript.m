@@ -10,7 +10,7 @@ param.llaTrueDegDegM = [];
 %% data
 % save data from GnssLogger App, and edit dirName and prFileName appropriately
 dirName = [pwd,filesep,'..',filesep,'Log Files'];
-prFileName = 'Rooftop.txt'; %Rooftop, Walking, Huang
+prFileName = 'Walking.txt'; %Rooftop, Walking, Huang
 oldpath = addpath(genpath(pwd));
 
 %% parameters
@@ -61,37 +61,37 @@ ts = 'EKF solution';
 PlotPvt(gpsEKFPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
 ax = gca;
 
-%% compute Huber position and velocity
-tic()
-gpsHuberPvt = GpsHuberPvt(gnssMeas,allGpsEph);
-toc()
-
-%% plot Pvt results
-figure;
-ts = 'Raw Pseudoranges, Huber solution';
-PlotPvt(gpsHuberPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
-ax = gca;
-
-%% Compute Welsh position
-tic()
-gpsWelshPvt = GpsWelshPvt(gnssMeas,allGpsEph);
-toc()
-
-%% plot Pvt results
-figure;
-ts = 'Raw Pseudoranges, Welsh solution';
-PlotPvt(gpsWelshPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
-ax = gca;
-
-% Plot Accumulated Delta Range 
-if any(any(isfinite(gnssMeas.AdrM) & gnssMeas.AdrM~=0))
-    [gnssMeas]= ProcessAdr(gnssMeas);
-    figure;
-    PlotAdr(gnssMeas,prFileName,colors);
-    [adrResid]= GpsAdrResiduals(gnssMeas,allGpsEph,param.llaTrueDegDegM);drawnow
-    figure;
-    PlotAdrResids(adrResid,gnssMeas,prFileName,colors);
-end
+% %% compute Huber position and velocity
+% tic()
+% gpsHuberPvt = GpsHuberPvt(gnssMeas,allGpsEph);
+% toc()
+% 
+% %% plot Pvt results
+% figure;
+% ts = 'Raw Pseudoranges, Huber solution';
+% PlotPvt(gpsHuberPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
+% ax = gca;
+% 
+% %% Compute Welsh position
+% tic()
+% gpsWelshPvt = GpsWelshPvt(gnssMeas,allGpsEph);
+% toc()
+% 
+% %% plot Pvt results
+% figure;
+% ts = 'Raw Pseudoranges, Welsh solution';
+% PlotPvt(gpsWelshPvt,prFileName,param.llaTrueDegDegM,ts); drawnow;
+% ax = gca;
+% 
+% % Plot Accumulated Delta Range 
+% if any(any(isfinite(gnssMeas.AdrM) & gnssMeas.AdrM~=0))
+%     [gnssMeas]= ProcessAdr(gnssMeas);
+%     figure;
+%     PlotAdr(gnssMeas,prFileName,colors);
+%     [adrResid]= GpsAdrResiduals(gnssMeas,allGpsEph,param.llaTrueDegDegM);drawnow
+%     figure;
+%     PlotAdrResids(adrResid,gnssMeas,prFileName,colors);
+% end
 %% end of ProcessGnssMeasScript
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Copyright 2016 Google Inc.
