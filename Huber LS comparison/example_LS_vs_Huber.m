@@ -26,6 +26,22 @@ x_LS
 b_LS
 format short
 
+%% L1
+measurement200 = load('pranges200.mat');
+time = 200;
+
+% Form rho0 and rhoC vectors
+for i = 1:satpos.numSats
+    rho0(i,:) = norm([satpos.x(time,i); satpos.y(time,i); satpos.z(time,i)]-x0);
+    x_sat_matrix(i,:) = [satpos.x(time,i); satpos.y(time,i); satpos.z(time,i)]';
+end
+
+rhoC = measurement200.prange';
+[x_L1,b_L1,dx_hist_L1,~] = getPositionL1(x_sat_matrix, rhoC, rho0, x0, b0);
+x_L1
+b_L1
+format short
+
 %% Huber
 % repeat for pranges200.mat
 measurement200 = load('pranges200.mat');
@@ -60,6 +76,7 @@ x_Welsh
 b_Welsh
 format short
 
+
 %% Plots
 % Plot residual history
 figure;
@@ -67,6 +84,7 @@ semilogy(dx_hist_LS, 'DisplayName', 'LS')
 hold on
 semilogy(dx_hist_Huber, 'DisplayName', 'Huber')
 semilogy(dx_hist_Welsh, 'DisplayName', 'Welsh')
+semilogy(dx_hist_L1, 'DisplayName', 'L_1')
 legend
 title('Residuals vs. Iteration')
 xlabel('Iteration')
@@ -157,6 +175,51 @@ while iter<max_iter && norm(d_rho) > epsilon
 end
 x_Huber = x0;
 b_Huber = b0;
+
+end
+
+function [x_L1,b_L1,dx_history,db_history] = getPositionL1(x_sat_matrix, rhoC, rho0, x0, b0)
+y0 = [x0;b0];
+d_rho = rhoC-rho0;
+
+% iterate until convergence to obtain position and bias information
+iter = 1;
+max_iter = 8;
+epsilon = 1e-4; % meters
+
+dx_history = [];
+db_history =[];
+while iter<max_iter && norm(d_rho) > epsilon
+    % form matrix
+    G = getGeometryMatrix(x_sat_matrix, x0);
+    
+    % update guess
+    cvx_begin quiet
+        variable dy(4)
+        f = norm(d_rho-G*dy,1);
+        minimize(f);
+    cvx_end
+    
+    y0 = y0 + dy;
+    x0 = y0(1:end-1);
+    b0 = y0(end);
+    
+    for i = 1:size(x_sat_matrix, 1)
+        rho0(i) = norm(x_sat_matrix(i,:)'-x0) + b0;
+    end
+    d_rho = rhoC-rho0;
+    
+    % Store history for plotting
+    dx = norm(dy(1:end-1));
+    db = abs(dy(end));
+    dx_history = [dx_history;dx];
+    db_history = [db_history;db];
+    
+    % break criteria
+    iter = iter + 1;
+end
+x_L1 = x0;
+b_L1 = b0;
 
 end
 

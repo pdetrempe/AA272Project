@@ -1,5 +1,5 @@
 clear; close all; clc
-ks = linspace(0,10,5);
+ks = linspace(1,10,6);
 x = linspace(-10,10,100);
 
 figure;
